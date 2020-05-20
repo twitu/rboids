@@ -1,6 +1,8 @@
 use three;
 use three::Object;
 
+mod boid;
+
 const BACKGROUND_C: u32 = 0xF0E0B6;
 
 fn main() {
@@ -67,9 +69,14 @@ fn main() {
     blind.set_position([0.0, -1.0, 0.0]);
     win.scene.add(&blind);
 
+    // create boid
+    let mut boxy: boid::Boid = boid::Boid::new(vec![0.0, 0.0, 0.0], vec![1.0, 0.0, 0.0]);
+
     // start scene
     while win.update() && !win.input.hit(three::KEY_ESCAPE) {
         controls.update(&win.input);
+        boxy.frame_update(win.input.delta_time());
+        cone.set_position(boxy.pos_array());
         win.render(&cam);
     }
 }
