@@ -1,9 +1,13 @@
 use three;
-use three::Object;
+use three::{Object, Mesh};
 
 mod boid;
+use boid::Boid;
 
 const BACKGROUND_C: u32 = 0xF0E0B6;
+const SPAWN_CENTRE: [f32; 3] = [0.0, 0.0, 0.0];
+const SPAWN_RADIUS: f32 = 3.0;
+const SPAWN_NUMBER: usize = 10;
 
 fn main() {
     // add window
@@ -70,18 +74,35 @@ fn main() {
     win.scene.add(&blind);
 
     // create boid
-    let mut boxy: boid::Boid = boid::Boid::new(vec![0.0, 0.0, 0.0], vec![0.5, 1.2, 0.0]);
+    let mut boids: Vec<Boid> = Boid::spawn_boids(&SPAWN_CENTRE, SPAWN_RADIUS, SPAWN_NUMBER);
+    let cones: Vec<Mesh> = spawn_cones(&mut win);
 
-    // start scene
+    // render scene
     while win.update() && !win.input.hit(three::KEY_ESCAPE) {
         // update camera transform
         controls.update(&win.input);
 
         // compute new boxy velocity and set it
-        boxy.frame_update(win.input.delta_time());
-        cone.set_transform(boxy.pos_array(), boxy.rot_array(), 1.0);
+        boids.iter_mut().for_each(|b: &mut Boid| b.frame_update(win.input.delta_time()));
+        boids.iter().zip(cones.iter()).for_each(|(b, c)| c.set_transform(b.pos_array(), b.rot_array(), 1.0));
 
         // render scene
         win.render(&cam);
     }
+}
+
+fn spawn_cones(win: &mut three::Window) -> Vec<Mesh> {
+    let mut cones: Vec<Mesh> = Vec::new();
+    for _ in 0..SPAWN_NUMBER {
+        let cone = {
+            let geometry = three::Geometry::cylinder(0.0, 1.0, 1.5, 12);
+            let material = three::material::Wireframe { color: three::color::BLACK };
+            win.factory.mesh(geometry, material)
+        };
+        win.scene.add(&cone);
+
+        cones.push(cone);
+    }
+
+    cones
 }
