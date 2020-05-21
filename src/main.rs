@@ -70,13 +70,18 @@ fn main() {
     win.scene.add(&blind);
 
     // create boid
-    let mut boxy: boid::Boid = boid::Boid::new(vec![0.0, 0.0, 0.0], vec![1.0, 0.0, 0.0]);
+    let mut boxy: boid::Boid = boid::Boid::new(vec![0.0, 0.0, 0.0], vec![0.5, 1.2, 0.0]);
 
     // start scene
     while win.update() && !win.input.hit(three::KEY_ESCAPE) {
+        // update camera transform
         controls.update(&win.input);
+
+        // compute new boxy velocity and set it
         boxy.frame_update(win.input.delta_time());
-        cone.set_position(boxy.pos_array());
+        cone.set_transform(boxy.pos_array(), boxy.rot_array(), 1.0);
+
+        // render scene
         win.render(&cam);
     }
 }
