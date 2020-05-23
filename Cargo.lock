@@ -1553,6 +1553,7 @@ dependencies = [
 name = "rboids"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "ncollide3d",
  "rand 0.7.3",
  "rand_distr",
