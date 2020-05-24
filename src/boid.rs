@@ -4,6 +4,7 @@ use ncollide3d::query::{RayCast, Ray};
 use ncollide3d::math::Isometry;
 use rand::{thread_rng, Rng};
 use rand_distr::{Distribution, UnitSphere};
+use ncollide3d::nalgebra::clamp;
 
 // Scaling factors
 const TIME_SCALE: f32 = 1.0;
@@ -11,6 +12,11 @@ const MAX_VEL: f32 = 4.0;
 const MIN_VEL: f32 = 1.0;
 const RAY_NUMS: usize = 100;
 const OBSTACLE_DIST: f32 = 5.0;
+
+// rule weightage
+const MAX_ACC: f32 = 3.0;
+const MIN_ACC: f32 = 0.0;
+const OBSTACLE_W: f32 = 6.0;
 
 use lazy_static::lazy_static;
 
@@ -105,9 +111,18 @@ impl Boid {
         best_dir
     }
 
-    pub fn frame_update(&mut self, obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>, delta_time: f32) {
-        // update position
-        self.pos += self.vel * delta_time * TIME_SCALE;
+    /// calculate clamped acceleration in the direction of `vel`
+    ///
+    /// `vel` - vel should be a unit vector to ensure correct calculations
+    fn calc_acc(&self, vel: &Vector3<f32>) -> Vector3<f32> {
+        let mut acc = vel * MAX_VEL - self.vel;
+        acc.set_magnitude(clamp(acc.magnitude(), MIN_ACC, MAX_ACC));
+        acc
+    }
+
+    /// apply rules to calculate acceleration
+    fn apply_rules(&self, obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>) -> Vector3<f32> {
+        let mut acc: Vector3<f32> = Vector3::new(0.0, 0.0, 0.0);
 
         // check if current heading is obstructed
         let cur_ray: Ray<f32> = Ray{origin: self.pos, dir: self.vel.normalize()};
@@ -115,9 +130,21 @@ impl Boid {
             // try to find an unobstructed direction
             // only affect acceleration if unobstructed direction exists
             if let Some(dir) = self.unobstructed_dir(obs) {
-                self.vel = dir * self.vel.magnitude();
+                acc += self.calc_acc(&dir) * OBSTACLE_W;
             }
         }
+
+        acc
+    }
+
+    pub fn frame_update(&mut self, obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>, delta_time: f32) {
+        // update position
+        self.pos += self.vel * delta_time * TIME_SCALE;
+
+        // update velocity
+        let mut new_vel = self.vel + self.apply_rules(obs);
+        new_vel.set_magnitude(clamp(new_vel.magnitude(), MIN_VEL, MAX_VEL));
+        self.vel = new_vel;
     }
 }
 

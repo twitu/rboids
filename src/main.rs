@@ -11,7 +11,7 @@ use boid::Boid;
 const BACKGROUND_C: u32 = 0xF0E0B6;
 const SPAWN_CENTRE: [f32; 3] = [0.0, 0.0, 0.0];
 const SPAWN_RADIUS: f32 = 3.0;
-const SPAWN_NUMBER: usize = 10;
+const SPAWN_NUMBER: usize = 50;
 
 fn main() {
     // add window
