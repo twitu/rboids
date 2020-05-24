@@ -8,15 +8,23 @@ use rand_distr::{Distribution, UnitSphere};
 
 // Scaling factors
 const TIME_SCALE: f32 = 1.0;
-const MAX_VEL: f32 = 4.0;
-const MIN_VEL: f32 = 1.0;
+const MAX_VEL: f32 = 14.0;
+const MIN_VEL: f32 = 7.0;
 const RAY_NUMS: usize = 100;
-const OBSTACLE_DIST: f32 = 5.0;
+const MAX_ACC: f32 = 2.0;
+const MIN_ACC: f32 = 0.0;
 
 // rule weightage
-const MAX_ACC: f32 = 3.0;
-const MIN_ACC: f32 = 0.0;
 const OBSTACLE_W: f32 = 6.0;
+const ALIGN_W: f32 = 0.2;
+const COLLISION_W: f32 = 1.0;
+const COHESION_W: f32 = 0.1;
+
+// limits
+const OBSTACLE_DIST: f32 = 5.0;
+const VIEW_ANG: f32 = 2.0 * std::f32::consts::FRAC_PI_3; // 120 degrees in radians
+const VIEW_R: f32 = 3.0;
+const COLLISION_R: f32 = 1.3;
 
 use lazy_static::lazy_static;
 
@@ -118,14 +126,66 @@ impl Boid {
     ///
     /// `vel` - vel should be a unit vector to ensure correct calculations
     fn calc_acc(&self, vel: &Vector3<f32>) -> Vector3<f32> {
-        let mut acc = vel * MAX_VEL - self.vel;
+        let mut acc = vel.normalize() * MAX_VEL - self.vel;
         acc.set_magnitude(clamp(acc.magnitude(), MIN_ACC, MAX_ACC));
         acc
     }
 
     /// apply rules to calculate acceleration
-    fn apply_rules(&self, obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>) -> Vector3<f32> {
+    fn apply_rules(
+        &self,
+        i: usize,
+        copy: &Vec<Boid>,
+        obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>,
+    ) -> Vector3<f32> {
         let mut acc: Vector3<f32> = Vector3::new(0.0, 0.0, 0.0);
+
+        // intialize accumulators
+        let mut neighbours: i32 = 0;
+        let mut too_near: i32 = 0;
+        let mut alignment: Vector3<f32> = Vector3::new(0.0, 0.0, 0.0);
+        let mut cohesion: Vector3<f32> = Vector3::new(0.0, 0.0, 0.0);
+        let mut collision: Vector3<f32> = Vector3::new(0.0, 0.0, 0.0);
+
+        // aggregate neighbour information
+        for (index, b) in copy.iter().enumerate() {
+            // ignore self
+            if index == i {
+                continue;
+            }
+
+            // only look within viewing angle
+            let separation = b.pos.coords - self.pos.coords;
+            if b.vel.angle(&separation) >= VIEW_ANG {
+                continue;
+            }
+
+            // only look within viewing radius
+            if separation.magnitude() >= VIEW_R {
+                continue;
+            }
+
+            // update accumulators
+            neighbours += 1;
+            alignment += b.vel;
+            cohesion += b.pos.coords;
+            if separation.magnitude() < COLLISION_R {
+                too_near += 1;
+                collision -= separation / separation.magnitude();
+            }
+        }
+
+        if neighbours != 0 {
+            alignment = alignment / neighbours as f32;
+            cohesion = (cohesion / neighbours as f32) - self.pos.coords;
+
+            acc += self.calc_acc(&alignment) * ALIGN_W;
+            acc += self.calc_acc(&cohesion) * COHESION_W;
+        }
+
+        if too_near != 0 {
+            acc += self.calc_acc(&collision) * COLLISION_W;
+        }
 
         // check if current heading is obstructed
         let cur_ray: Ray<f32> = Ray {
@@ -145,14 +205,18 @@ impl Boid {
 
     pub fn frame_update(
         &mut self,
+        i: usize,
+        copy: &Vec<Boid>,
         obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>,
         delta_time: f32,
     ) {
         // update position
         self.pos += self.vel * delta_time * TIME_SCALE;
+        // println!("{}: {}", i, self.pos);
 
         // update velocity
-        let mut new_vel = self.vel + self.apply_rules(obs);
+        let mut new_vel = self.vel + self.apply_rules(i, copy, obs);
+        // println!("{}: {}", i, new_vel);
         new_vel.set_magnitude(clamp(new_vel.magnitude(), MIN_VEL, MAX_VEL));
         self.vel = new_vel;
     }

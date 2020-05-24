@@ -10,8 +10,8 @@ use boid::Boid;
 
 const BACKGROUND_C: u32 = 0xF0E0B6;
 const SPAWN_CENTRE: [f32; 3] = [0.0, 0.0, 0.0];
-const SPAWN_RADIUS: f32 = 3.0;
-const SPAWN_NUMBER: usize = 50;
+const SPAWN_RADIUS: f32 = 6.0;
+const SPAWN_NUMBER: usize = 200;
 
 fn main() {
     // add window
@@ -40,10 +40,14 @@ fn main() {
         // update camera transform
         controls.update(&win.input);
 
+        // copy boid information
+        let copy = boids.clone();
+
         // compute new boxy velocity and set it
         boids
             .iter_mut()
-            .for_each(|b: &mut Boid| b.frame_update(&obstacles, win.input.delta_time()));
+            .enumerate()
+            .for_each(|(i, b)| b.frame_update(i, &copy, &obstacles, win.input.delta_time()));
         boids
             .iter()
             .zip(cones.iter())
