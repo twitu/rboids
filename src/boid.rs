@@ -5,6 +5,7 @@ use ncollide3d::nalgebra::{Point3, Vector3, Vector4};
 use ncollide3d::query::{Ray, RayCast};
 use rand::{thread_rng, Rng};
 use rand_distr::{Distribution, UnitSphere};
+use ncollide3d::shape::{Cylinder, Plane};
 
 // Scaling factors
 const TIME_SCALE: f32 = 1.0;
@@ -255,6 +256,43 @@ pub fn spawn_boids(c: &[f32; 3], r: f32, n: usize) -> Vec<Boid> {
     }
 
     boids
+}
+
+/// create vector of obstacles and there corresponding isometric transformations
+/// The obstacle shape is contained in Box to allow for dynamic dispatch
+pub fn create_obstacles() -> Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)> {
+    // create obstacles
+    let mut obstacles: Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)> = Vec::new();
+    obstacles.push((
+        Box::new(Plane::new(Vector3::x_axis())),
+        Isometry::translation(-15.0, 0.0, 0.0),
+    ));
+    obstacles.push((
+        Box::new(Plane::new(-Vector3::x_axis())),
+        Isometry::translation(15.0, 0.0, 0.0),
+    ));
+    obstacles.push((
+        Box::new(Plane::new(Vector3::y_axis())),
+        Isometry::translation(0.0, -15.0, 0.0),
+    ));
+    obstacles.push((
+        Box::new(Plane::new(-Vector3::y_axis())),
+        Isometry::translation(0.0, 15.0, 0.0),
+    ));
+    obstacles.push((
+        Box::new(Plane::new(Vector3::z_axis())),
+        Isometry::translation(0.0, 0.0, -15.0),
+    ));
+    obstacles.push((
+        Box::new(Plane::new(-Vector3::z_axis())),
+        Isometry::translation(0.0, 0.0, 15.0),
+    ));
+    obstacles.push((
+        Box::new(Cylinder::new(25.0, 3.0)),
+        Isometry::translation(-10.0, 0.0, 0.0),
+    ));
+
+    obstacles
 }
 
 /// check if a ray collides with the given obstacles

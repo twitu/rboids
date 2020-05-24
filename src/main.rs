@@ -1,7 +1,3 @@
-use ncollide3d::math::Isometry;
-use ncollide3d::nalgebra::Vector3;
-use ncollide3d::query::RayCast;
-use ncollide3d::shape::{Cylinder, Plane};
 use three;
 use three::{Mesh, Object};
 
@@ -29,7 +25,7 @@ fn main() {
     add_objects_to_scene(&mut win);
 
     // create obstacles
-    let obstacles = create_obstacles();
+    let obstacles = boid::create_obstacles();
 
     // create boid
     let mut boids: Vec<Boid> = boid::spawn_boids(&SPAWN_CENTRE, SPAWN_RADIUS, SPAWN_NUMBER);
@@ -42,12 +38,14 @@ fn main() {
 
         // copy boid information
         let copy = boids.clone();
+        let time = win.input.delta_time();
 
         // compute new boxy velocity and set it
         boids
             .iter_mut()
             .enumerate()
-            .for_each(|(i, b)| b.frame_update(i, &copy, &obstacles, win.input.delta_time()));
+            // .for_each(|(i, b): (usize, &mut Boid)| b.frame_update(i, &copy, &obstacles, win.input.delta_time()));
+            .for_each(|(i, b): (usize, &mut Boid)| b.frame_update(i, &copy, &obstacles, time));
         boids
             .iter()
             .zip(cones.iter())
@@ -127,41 +125,4 @@ fn add_objects_to_scene(win: &mut three::Window) {
     };
     mcone.set_position([-10.0, 0.0, 0.0]);
     win.scene.add(&mcone);
-}
-
-/// create vector of obstacles and there corresponding isometric transformations
-/// The obstacle shape is contained in Box to allow for dynamic dispatch
-fn create_obstacles() -> Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)> {
-    // create obstacles
-    let mut obstacles: Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)> = Vec::new();
-    obstacles.push((
-        Box::new(Plane::new(Vector3::x_axis())),
-        Isometry::translation(-15.0, 0.0, 0.0),
-    ));
-    obstacles.push((
-        Box::new(Plane::new(-Vector3::x_axis())),
-        Isometry::translation(15.0, 0.0, 0.0),
-    ));
-    obstacles.push((
-        Box::new(Plane::new(Vector3::y_axis())),
-        Isometry::translation(0.0, -15.0, 0.0),
-    ));
-    obstacles.push((
-        Box::new(Plane::new(-Vector3::y_axis())),
-        Isometry::translation(0.0, 15.0, 0.0),
-    ));
-    obstacles.push((
-        Box::new(Plane::new(Vector3::z_axis())),
-        Isometry::translation(0.0, 0.0, -15.0),
-    ));
-    obstacles.push((
-        Box::new(Plane::new(-Vector3::z_axis())),
-        Isometry::translation(0.0, 0.0, 15.0),
-    ));
-    obstacles.push((
-        Box::new(Cylinder::new(25.0, 3.0)),
-        Isometry::translation(-10.0, 0.0, 0.0),
-    ));
-
-    obstacles
 }
