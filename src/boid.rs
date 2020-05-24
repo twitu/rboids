@@ -1,10 +1,10 @@
-use ncollide3d::nalgebra::{Point3, Vector3, Vector4};
-use ncollide3d::nalgebra::geometry::UnitQuaternion;
-use ncollide3d::query::{RayCast, Ray};
 use ncollide3d::math::Isometry;
+use ncollide3d::nalgebra::clamp;
+use ncollide3d::nalgebra::geometry::UnitQuaternion;
+use ncollide3d::nalgebra::{Point3, Vector3, Vector4};
+use ncollide3d::query::{Ray, RayCast};
 use rand::{thread_rng, Rng};
 use rand_distr::{Distribution, UnitSphere};
-use ncollide3d::nalgebra::clamp;
 
 // Scaling factors
 const TIME_SCALE: f32 = 1.0;
@@ -81,7 +81,10 @@ impl Boid {
     }
 
     /// return unobstructed direction closest to current velocity
-    fn unobstructed_dir(&self, obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>) -> Option<Vector3<f32>> {
+    fn unobstructed_dir(
+        &self,
+        obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>,
+    ) -> Option<Vector3<f32>> {
         // create a rotation to orient ray directions along velocity
         let ray_axis: Vector3<f32> = Vector3::new(0.0, 0.0, 1.0);
         let rot = UnitQuaternion::rotation_between(&ray_axis, &self.vel).unwrap_or(
@@ -125,7 +128,10 @@ impl Boid {
         let mut acc: Vector3<f32> = Vector3::new(0.0, 0.0, 0.0);
 
         // check if current heading is obstructed
-        let cur_ray: Ray<f32> = Ray{origin: self.pos, dir: self.vel.normalize()};
+        let cur_ray: Ray<f32> = Ray {
+            origin: self.pos,
+            dir: self.vel.normalize(),
+        };
         if collided(obs, cur_ray) {
             // try to find an unobstructed direction
             // only affect acceleration if unobstructed direction exists
@@ -137,7 +143,11 @@ impl Boid {
         acc
     }
 
-    pub fn frame_update(&mut self, obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>, delta_time: f32) {
+    pub fn frame_update(
+        &mut self,
+        obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>,
+        delta_time: f32,
+    ) {
         // update position
         self.pos += self.vel * delta_time * TIME_SCALE;
 
@@ -164,8 +174,7 @@ pub fn spawn_boids(c: &[f32; 3], r: f32, n: usize) -> Vec<Boid> {
         // create position by random offset from centre within given radius
         let off_value = r * rng.gen_range(-1.0, 1.0);
         let coords: [f32; 3] = UnitSphere.sample(&mut rng);
-        let offset: Vector3<f32> =
-            Vector3::<f32>::from_row_slice(&coords);
+        let offset: Vector3<f32> = Vector3::<f32>::from_row_slice(&coords);
         let pos: Point3<f32> = Point3::from(centre + offset * off_value);
 
         // create random velocity with magnitude between MIN_VEL and MAX_VEL

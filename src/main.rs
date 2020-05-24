@@ -1,9 +1,9 @@
-use three;
-use three::{Object, Mesh};
-use ncollide3d::query::RayCast;
 use ncollide3d::math::Isometry;
-use ncollide3d::shape::{Plane, Cylinder};
 use ncollide3d::nalgebra::Vector3;
+use ncollide3d::query::RayCast;
+use ncollide3d::shape::{Cylinder, Plane};
+use three;
+use three::{Mesh, Object};
 
 mod boid;
 use boid::Boid;
@@ -41,8 +41,13 @@ fn main() {
         controls.update(&win.input);
 
         // compute new boxy velocity and set it
-        boids.iter_mut().for_each(|b: &mut Boid| b.frame_update(&obstacles, win.input.delta_time()));
-        boids.iter().zip(cones.iter()).for_each(|(b, c)| c.set_transform(b.pos_array(), b.rot_array(), 1.0));
+        boids
+            .iter_mut()
+            .for_each(|b: &mut Boid| b.frame_update(&obstacles, win.input.delta_time()));
+        boids
+            .iter()
+            .zip(cones.iter())
+            .for_each(|(b, c)| c.set_transform(b.pos_array(), b.rot_array(), 1.0));
 
         // render scene
         win.render(&cam);
@@ -54,7 +59,9 @@ fn spawn_cones(win: &mut three::Window) -> Vec<Mesh> {
     for _ in 0..SPAWN_NUMBER {
         let cone = {
             let geometry = three::Geometry::cylinder(0.0, 1.0, 1.5, 12);
-            let material = three::material::Wireframe { color: three::color::BLACK };
+            let material = three::material::Wireframe {
+                color: three::color::BLACK,
+            };
             win.factory.mesh(geometry, material)
         };
         win.scene.add(&cone);
@@ -69,7 +76,9 @@ fn add_objects_to_scene(win: &mut three::Window) {
     // add axes
     let x_edge = {
         let geometry = three::Geometry::uv_sphere(0.2, 12, 12);
-        let material = three::material::Wireframe { color: three::color::MAGENTA };
+        let material = three::material::Wireframe {
+            color: three::color::MAGENTA,
+        };
         win.factory.mesh(geometry, material)
     };
     x_edge.set_position([5.0, 0.0, 0.0]);
@@ -77,7 +86,9 @@ fn add_objects_to_scene(win: &mut three::Window) {
 
     let y_edge = {
         let geometry = three::Geometry::uv_sphere(0.2, 12, 12);
-        let material = three::material::Wireframe { color: three::color::BLUE };
+        let material = three::material::Wireframe {
+            color: three::color::BLUE,
+        };
         win.factory.mesh(geometry, material)
     };
     y_edge.set_position([0.0, 5.0, 0.0]);
@@ -85,7 +96,9 @@ fn add_objects_to_scene(win: &mut three::Window) {
 
     let z_edge = {
         let geometry = three::Geometry::uv_sphere(0.2, 12, 12);
-        let material = three::material::Wireframe { color: three::color::YELLOW };
+        let material = three::material::Wireframe {
+            color: three::color::YELLOW,
+        };
         win.factory.mesh(geometry, material)
     };
     z_edge.set_position([0.0, 0.0, 5.0]);
@@ -93,7 +106,9 @@ fn add_objects_to_scene(win: &mut three::Window) {
 
     let mbox = {
         let geometry = three::Geometry::cuboid(30.0, 30.0, 30.0);
-        let material = three::material::Wireframe { color: three::color::GREEN };
+        let material = three::material::Wireframe {
+            color: three::color::GREEN,
+        };
         win.factory.mesh(geometry, material)
     };
     mbox.set_position([0.0, 0.0, 0.0]);
@@ -101,7 +116,9 @@ fn add_objects_to_scene(win: &mut three::Window) {
 
     let mcone = {
         let geometry = three::Geometry::cylinder(3.0, 3.0, 30.0, 12);
-        let material = three::material::Wireframe { color: three::color::GREEN };
+        let material = three::material::Wireframe {
+            color: three::color::GREEN,
+        };
         win.factory.mesh(geometry, material)
     };
     mcone.set_position([-10.0, 0.0, 0.0]);
@@ -115,31 +132,31 @@ fn create_obstacles() -> Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)> {
     let mut obstacles: Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)> = Vec::new();
     obstacles.push((
         Box::new(Plane::new(Vector3::x_axis())),
-        Isometry::translation(-15.0, 0.0, 0.0)
+        Isometry::translation(-15.0, 0.0, 0.0),
     ));
     obstacles.push((
         Box::new(Plane::new(-Vector3::x_axis())),
-        Isometry::translation(15.0, 0.0, 0.0)
+        Isometry::translation(15.0, 0.0, 0.0),
     ));
     obstacles.push((
         Box::new(Plane::new(Vector3::y_axis())),
-        Isometry::translation(0.0, -15.0, 0.0)
+        Isometry::translation(0.0, -15.0, 0.0),
     ));
     obstacles.push((
         Box::new(Plane::new(-Vector3::y_axis())),
-        Isometry::translation(0.0, 15.0, 0.0)
+        Isometry::translation(0.0, 15.0, 0.0),
     ));
     obstacles.push((
         Box::new(Plane::new(Vector3::z_axis())),
-        Isometry::translation(0.0, 0.0, -15.0)
+        Isometry::translation(0.0, 0.0, -15.0),
     ));
     obstacles.push((
         Box::new(Plane::new(-Vector3::z_axis())),
-        Isometry::translation(0.0, 0.0, 15.0)
+        Isometry::translation(0.0, 0.0, 15.0),
     ));
     obstacles.push((
         Box::new(Cylinder::new(25.0, 3.0)),
-        Isometry::translation(-10.0, 0.0, 0.0)
+        Isometry::translation(-10.0, 0.0, 0.0),
     ));
 
     obstacles
