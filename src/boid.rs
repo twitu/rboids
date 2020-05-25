@@ -92,7 +92,7 @@ impl Boid {
     /// return unobstructed direction closest to current velocity
     fn unobstructed_dir(
         &self,
-        obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>,
+        obs: &Vec<(Box<dyn RayCast<f32> + Sync>, Isometry<f32>)>,
     ) -> Option<Vector3<f32>> {
         // create a rotation to orient ray directions along velocity
         let ray_axis: Vector3<f32> = Vector3::new(0.0, 0.0, 1.0);
@@ -137,7 +137,7 @@ impl Boid {
         &self,
         i: usize,
         copy: &Vec<Boid>,
-        obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>,
+        obs: &Vec<(Box<dyn RayCast<f32> + Sync>, Isometry<f32>)>,
     ) -> Vector3<f32> {
         let mut acc: Vector3<f32> = Vector3::new(0.0, 0.0, 0.0);
 
@@ -208,7 +208,7 @@ impl Boid {
         &mut self,
         i: usize,
         copy: &Vec<Boid>,
-        obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>,
+        obs: &Vec<(Box<dyn RayCast<f32> + Sync>, Isometry<f32>)>,
         delta_time: f32,
     ) {
         // update position
@@ -260,9 +260,9 @@ pub fn spawn_boids(c: &[f32; 3], r: f32, n: usize) -> Vec<Boid> {
 
 /// create vector of obstacles and there corresponding isometric transformations
 /// The obstacle shape is contained in Box to allow for dynamic dispatch
-pub fn create_obstacles() -> Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)> {
+pub fn create_obstacles() -> Vec<(Box<dyn RayCast<f32> + Sync>, Isometry<f32>)> {
     // create obstacles
-    let mut obstacles: Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)> = Vec::new();
+    let mut obstacles: Vec<(Box<dyn RayCast<f32> + Sync>, Isometry<f32>)> = Vec::new();
     obstacles.push((
         Box::new(Plane::new(Vector3::x_axis())),
         Isometry::translation(-15.0, 0.0, 0.0),
@@ -296,7 +296,7 @@ pub fn create_obstacles() -> Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)> {
 }
 
 /// check if a ray collides with the given obstacles
-fn collided(obs: &Vec<(Box<dyn RayCast<f32>>, Isometry<f32>)>, ray: Ray<f32>) -> bool {
+fn collided(obs: &Vec<(Box<dyn RayCast<f32> + Sync>, Isometry<f32>)>, ray: Ray<f32>) -> bool {
     obs.iter()
         .any(|(shape, iso)| shape.intersects_ray(iso, &ray, OBSTACLE_DIST))
 }

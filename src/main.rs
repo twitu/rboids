@@ -1,5 +1,6 @@
 use three;
 use three::{Mesh, Object};
+use rayon::prelude::*;
 
 mod boid;
 use boid::Boid;
@@ -38,14 +39,13 @@ fn main() {
 
         // copy boid information
         let copy = boids.clone();
-        let time = win.input.delta_time();
+        let delta_time = win.input.delta_time();
 
         // compute new boxy velocity and set it
         boids
-            .iter_mut()
+            .par_iter_mut()
             .enumerate()
-            // .for_each(|(i, b): (usize, &mut Boid)| b.frame_update(i, &copy, &obstacles, win.input.delta_time()));
-            .for_each(|(i, b): (usize, &mut Boid)| b.frame_update(i, &copy, &obstacles, time));
+            .for_each(|(i, b): (usize, &mut Boid)| b.frame_update(i, &copy, &obstacles, delta_time));
         boids
             .iter()
             .zip(cones.iter())
