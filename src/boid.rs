@@ -5,7 +5,7 @@ use ncollide3d::nalgebra::{Point3, Vector3, Vector4};
 use ncollide3d::query::{Ray, RayCast};
 use rand::{thread_rng, Rng};
 use rand_distr::{Distribution, UnitSphere};
-use ncollide3d::shape::{Cylinder, Plane};
+use ncollide3d::shape::{Cylinder, Plane, Ball};
 
 // Scaling factors
 const TIME_SCALE: f32 = 1.0;
@@ -19,12 +19,12 @@ const MIN_ACC: f32 = 0.0;
 const OBSTACLE_W: f32 = 6.0;
 const ALIGN_W: f32 = 0.2;
 const COLLISION_W: f32 = 1.0;
-const COHESION_W: f32 = 0.1;
+const COHESION_W: f32 = 0.2;
 
 // limits
 const OBSTACLE_DIST: f32 = 5.0;
-const VIEW_ANG: f32 = 2.0 * std::f32::consts::FRAC_PI_3; // 120 degrees in radians
-const VIEW_R: f32 = 3.0;
+const VIEW_ANG: f32 = 2.5 * std::f32::consts::FRAC_PI_3; // 120 degrees in radians
+const VIEW_R: f32 = 4.0;
 const COLLISION_R: f32 = 1.3;
 
 use lazy_static::lazy_static;
@@ -82,11 +82,6 @@ impl Boid {
             ))
             .as_vector();
         rot.into()
-    }
-
-    /// return velocity as array
-    pub fn vel_array(&self) -> [f32; 3] {
-        self.vel.into()
     }
 
     /// return unobstructed direction closest to current velocity
@@ -217,9 +212,13 @@ impl Boid {
 
         // update velocity
         let mut new_vel = self.vel + self.apply_rules(i, copy, obs);
-        // println!("{}: {}", i, new_vel);
         new_vel.set_magnitude(clamp(new_vel.magnitude(), MIN_VEL, MAX_VEL));
-        self.vel = new_vel;
+
+        // add extra check because new vel magnitude can be NaN
+        // this can happen when one of the rules gives a zero vector
+        if !new_vel.magnitude().is_nan() {
+            self.vel = new_vel;
+        }
     }
 }
 
@@ -263,33 +262,36 @@ pub fn spawn_boids(c: &[f32; 3], r: f32, n: usize) -> Vec<Boid> {
 pub fn create_obstacles() -> Vec<(Box<dyn RayCast<f32> + Sync>, Isometry<f32>)> {
     // create obstacles
     let mut obstacles: Vec<(Box<dyn RayCast<f32> + Sync>, Isometry<f32>)> = Vec::new();
+
+    for (norm, (x, y, z)) in [
+        (Vector3::x_axis(), (-30.0f32, 0.0, 0.0)),
+        (-Vector3::x_axis(), (30.0, 0.0, 0.0)),
+        (Vector3::y_axis(), (0.0, -30.0, 0.0)),
+        (-Vector3::y_axis(), (0.0, 30.0, 0.0)),
+        (Vector3::z_axis(), (0.0, 0.0, -30.0)),
+        (-Vector3::z_axis(), (0.0, 0.0, 30.0)),
+    ].iter() {
+        obstacles.push((
+            Box::new(Plane::new(*norm)),
+            Isometry::translation(*x, *y, *z),
+        ));
+    }
+
+    for (x, y, z) in [
+        (20.0f32, -5.0, 20.0),
+        (20.0, -5.0, -20.0),
+        (-20.0, -5.0, -20.0),
+        (-20.0, -5.0, 20.0),
+    ].iter() {
+        obstacles.push((
+            Box::new(Cylinder::new(25.0, 4.0)),
+            Isometry::translation(*x, *y, *z),
+        ));
+    }
+
     obstacles.push((
-        Box::new(Plane::new(Vector3::x_axis())),
-        Isometry::translation(-15.0, 0.0, 0.0),
-    ));
-    obstacles.push((
-        Box::new(Plane::new(-Vector3::x_axis())),
-        Isometry::translation(15.0, 0.0, 0.0),
-    ));
-    obstacles.push((
-        Box::new(Plane::new(Vector3::y_axis())),
-        Isometry::translation(0.0, -15.0, 0.0),
-    ));
-    obstacles.push((
-        Box::new(Plane::new(-Vector3::y_axis())),
+        Box::new(Ball::new(6.0)),
         Isometry::translation(0.0, 15.0, 0.0),
-    ));
-    obstacles.push((
-        Box::new(Plane::new(Vector3::z_axis())),
-        Isometry::translation(0.0, 0.0, -15.0),
-    ));
-    obstacles.push((
-        Box::new(Plane::new(-Vector3::z_axis())),
-        Isometry::translation(0.0, 0.0, 15.0),
-    ));
-    obstacles.push((
-        Box::new(Cylinder::new(25.0, 3.0)),
-        Isometry::translation(-10.0, 0.0, 0.0),
     ));
 
     obstacles
