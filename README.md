@@ -24,3 +24,6 @@ It is also divided into ten tagged stages to mark milestones. You can begin from
 
 I'm a beginner at Rust so I will appreciate any suggestions for improving the code. Any questions and issues related to the blog are also welcome, just file an issue or mail me.
 
+## Troubleshooting
+Here I try to address some of the common errors people face when trying to run the project.     
+- *`failed to run custom build command for alsa-sys v0.1.2`*: This error occours beacuse the ala-sys dependency requires an external package for compiling correctly. [Refer here](https://github.com/RustAudio/rodio/issues/200) to solve the issue
