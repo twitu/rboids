@@ -97,25 +97,22 @@ impl Boid {
 
         // iterate over all ray directions
         // create a ray from each direction and check for collision
-        let mut best_dir: Option<Vector3<f32>> = None;
-        for dir in RAY_DIRS.iter() {
+        let best_dir: Option<&Vector3<f32>> = RAY_DIRS.iter().find(|dir: &&Vector3<f32>| {
             let ray = Ray {
                 origin: self.pos,
-                dir: rot * dir,
+                dir: rot * *dir,
             };
 
-            // if direction is unobstructed store it
-            // after correcting it's orientation
-            if !collided(obs, ray) {
-                best_dir = Some(rot * dir);
-                break;
-            }
-        }
+            !collided(obs, ray)
+        });
 
         // It is possible that there is no unobstructed direction
         // but that is highly unlikely and possible only when the boid
         // is entirely surrounded by obstacles.
-        best_dir
+        match best_dir {
+            Some(dir) => Some(rot * dir),
+            None => None
+        }
     }
 
     /// calculate clamped acceleration in the direction of `vel`
@@ -270,7 +267,9 @@ pub fn create_obstacles() -> Vec<(Box<dyn RayCast<f32> + Sync>, Isometry<f32>)> 
         (-Vector3::y_axis(), (0.0, 30.0, 0.0)),
         (Vector3::z_axis(), (0.0, 0.0, -30.0)),
         (-Vector3::z_axis(), (0.0, 0.0, 30.0)),
-    ].iter() {
+    ]
+    .iter()
+    {
         obstacles.push((
             Box::new(Plane::new(*norm)),
             Isometry::translation(*x, *y, *z),
@@ -282,7 +281,9 @@ pub fn create_obstacles() -> Vec<(Box<dyn RayCast<f32> + Sync>, Isometry<f32>)> 
         (20.0, -5.0, -20.0),
         (-20.0, -5.0, -20.0),
         (-20.0, -5.0, 20.0),
-    ].iter() {
+    ]
+    .iter()
+    {
         obstacles.push((
             Box::new(Cylinder::new(25.0, 4.0)),
             Isometry::translation(*x, *y, *z),
