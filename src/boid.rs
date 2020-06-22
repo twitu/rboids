@@ -3,9 +3,9 @@ use ncollide3d::nalgebra::clamp;
 use ncollide3d::nalgebra::geometry::UnitQuaternion;
 use ncollide3d::nalgebra::{Point3, Vector3, Vector4};
 use ncollide3d::query::{Ray, RayCast};
+use ncollide3d::shape::{Ball, Cylinder, Plane};
 use rand::{thread_rng, Rng};
 use rand_distr::{Distribution, UnitSphere};
-use ncollide3d::shape::{Cylinder, Plane, Ball};
 
 // Scaling factors
 const TIME_SCALE: f32 = 1.0;
@@ -109,10 +109,7 @@ impl Boid {
         // It is possible that there is no unobstructed direction
         // but that is highly unlikely and possible only when the boid
         // is entirely surrounded by obstacles.
-        match best_dir {
-            Some(dir) => Some(rot * dir),
-            None => None
-        }
+        best_dir.map(|dir: &Vector3<f32>| rot * dir)
     }
 
     /// calculate clamped acceleration in the direction of `vel`
@@ -260,30 +257,30 @@ pub fn create_obstacles() -> Vec<(Box<dyn RayCast<f32> + Sync>, Isometry<f32>)> 
     // create obstacles
     let mut obstacles: Vec<(Box<dyn RayCast<f32> + Sync>, Isometry<f32>)> = Vec::new();
 
-    for (norm, (x, y, z)) in [
+    let cylinders = [
         (Vector3::x_axis(), (-30.0f32, 0.0, 0.0)),
         (-Vector3::x_axis(), (30.0, 0.0, 0.0)),
         (Vector3::y_axis(), (0.0, -30.0, 0.0)),
         (-Vector3::y_axis(), (0.0, 30.0, 0.0)),
         (Vector3::z_axis(), (0.0, 0.0, -30.0)),
         (-Vector3::z_axis(), (0.0, 0.0, 30.0)),
-    ]
-    .iter()
-    {
+    ];
+
+    for (norm, (x, y, z)) in cylinders.iter() {
         obstacles.push((
             Box::new(Plane::new(*norm)),
             Isometry::translation(*x, *y, *z),
         ));
     }
 
-    for (x, y, z) in [
+    let walls = [
         (20.0f32, -5.0, 20.0),
         (20.0, -5.0, -20.0),
         (-20.0, -5.0, -20.0),
         (-20.0, -5.0, 20.0),
-    ]
-    .iter()
-    {
+    ];
+
+    for (x, y, z) in walls.iter() {
         obstacles.push((
             Box::new(Cylinder::new(25.0, 4.0)),
             Isometry::translation(*x, *y, *z),

@@ -1,8 +1,8 @@
+use ncollide3d::nalgebra::geometry::UnitQuaternion;
+use ncollide3d::nalgebra::{Vector3, Vector4};
 use rayon::prelude::*;
 use three;
 use three::{Mesh, Object};
-use ncollide3d::nalgebra::geometry::UnitQuaternion;
-use ncollide3d::nalgebra::{Vector3, Vector4};
 
 mod boid;
 use boid::Boid;
@@ -15,10 +15,10 @@ const ORIGIN: [f32; 3] = [0.0, 0.0, 0.0];
 const SPAWN_CENTRE: [f32; 3] = [0.0, 0.0, 0.0];
 const SPAWN_RADIUS: f32 = 6.0;
 const SPAWN_NUMBER: usize = 500;
-const SPAWN_COLOURS: [u32; 3] = [ 0xFFA500 , 0x8E44AD, 0x1C2833 ];
+const SPAWN_COLOURS: [u32; 3] = [0xFFA500, 0x8E44AD, 0x1C2833];
 const FPS: u32 = 60;
 const DELTA: f32 = 1.0 / FPS as f32;
-const CAMERA_ROTATION: f32 = DELTA * std::f32::consts::PI / 20.0;  // 18 degrees per second
+const CAMERA_ROTATION: f32 = DELTA * std::f32::consts::PI / 20.0; // 18 degrees per second
 
 fn main() {
     // add window
@@ -68,9 +68,7 @@ fn main() {
         boids
             .par_iter_mut()
             .enumerate()
-            .for_each(|(i, b): (usize, &mut Boid)| {
-                b.frame_update(i, &copy, &obstacles, DELTA)
-            });
+            .for_each(|(i, b): (usize, &mut Boid)| b.frame_update(i, &copy, &obstacles, DELTA));
         boids
             .iter()
             .zip(cones.iter())
@@ -110,7 +108,6 @@ fn add_lighting_to_scene(win: &mut three::Window) {
 }
 
 fn add_objects_to_scene(win: &mut three::Window) {
-
     // glass box
     let object = {
         let geometry = three::Geometry::cuboid(60.0, 60.0, 60.0);
@@ -131,13 +128,10 @@ fn add_objects_to_scene(win: &mut three::Window) {
         win.factory.mesh(geometry, material)
     };
     // set rotation -90 degrees about x-axis
-    let rot = *UnitQuaternion::from_axis_angle(&Vector3::x_axis(), -std::f32::consts::FRAC_PI_2).as_vector();
+    let rot = *UnitQuaternion::from_axis_angle(&Vector3::x_axis(), -std::f32::consts::FRAC_PI_2)
+        .as_vector();
     let rot: [f32; 4] = rot.into();
-    object.set_transform(
-        [0.0, -30.0, 0.0],
-        rot,
-        1.0,
-    );
+    object.set_transform([0.0, -30.0, 0.0], rot, 1.0);
     win.scene.add(&object);
 
     // tree trunks
